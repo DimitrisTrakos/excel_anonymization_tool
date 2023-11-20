@@ -61,15 +61,16 @@ def transform_columns(data):
     return res
 
 
-def write_anon(path, anon_data, header, k, dataset, delimiter=';'):
+def write_anon(path, anon_data, header, k, dataset,sheatName, delimiter=';'):
     if isinstance(anon_data, dict):
         anon_data = anon_data.values()
     else:
         # Sort by ID (first column)
         anon_data = sorted(anon_data, key=lambda x: int(x[0]))
-        anon_data = [anon_data]
+        anon_data = [[[item for item in inner_list[1:]] for inner_list in anon_data]]    
+    header=header[1:]
     for i, data in enumerate(anon_data):
-        with open(os.path.join(path, dataset + "_anonymized_" + str(k) + ".csv"), mode='w', newline='') as anon_file:
+        with open(os.path.join(path, dataset +"-"+sheatName+ "_anonymized_" + str(k) + ".csv"), mode='w', newline='') as anon_file:
             anon_writer = csv.writer(anon_file, delimiter=delimiter)
             anon_writer.writerow(header)
             anon_writer.writerows(data)

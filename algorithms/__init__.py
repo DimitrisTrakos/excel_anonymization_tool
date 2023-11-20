@@ -86,6 +86,8 @@ def apply_differential_privacy(data, columns, epsilons, max_changes, min_values,
                     noisy_values = noisy_values.clip(lower=min_value)
 
                 if round_values:
-                    noisy_values = noisy_values.apply(lambda x: int(x) if not pd.isna(x) and not np.isinf(x) else x)
+                    noisy_values = noisy_values.apply(lambda x: int(x))
+                    noisy_values = noisy_values.apply(lambda x: str(x))
+
 
                 data[column] = noisy_values

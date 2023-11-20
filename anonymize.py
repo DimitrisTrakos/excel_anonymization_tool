@@ -12,42 +12,33 @@ from algorithms import (
 from datasets import read_config_file,convert_columns_to_indexes,extract_columns_from_hierarchies
 from utils.data import read_raw, write_anon
 
-parser = argparse.ArgumentParser('K-Anonymize')
-parser.add_argument('--method', type=str, default='none',
-                    help="K-Anonymity Method")
-parser.add_argument('--k', type=int, default=0,
-                    help="K-Anonymity or L-Diversity")
-parser.add_argument('--dataset', type=str, default='none',
-                    help="Dataset to anonymize")
-parser.add_argument('--differentialP',type=str,default='no',
-                    help='yes or no')
 
-
-class Anonymizer:
-    def __init__(self, args):
-        self.method = args.method
-        assert self.method in ["mondrian", "topdown", "cluster", "mondrian_ldiv", "classic_mondrian", "datafly","none"]
-        self.k = args.k
-        self.data_name = args.dataset      
-        self.csv_path = args.dataset+'.csv'
-        self.differentialP=args.differentialP
+class Anonymizer():
+    def __init__(self,excel_path=None,sheat_Name=None,data_name=None):
+        self.method ='mondrian'
+        self.k =8
+        self.sheat_Name=sheat_Name
+        self.data_name = data_name
+        self.csv_name=self.data_name+'-'+sheat_Name
+        self.csv_path = self.csv_name+'.csv'
+       
 
         # Data path
-        self.path = os.path.join('data', args.dataset)  # trailing /
+        self.path = os.path.join('data', self.data_name)  # trailing /
         # Dataset path
-        df=pd.read_excel(os.path.join(self.path, args.dataset+'.xlsx'), skiprows=[0, 2])
+        xlxs_Path=os.path.join(self.path, self.data_name+'.xlsx')
+        df=pd.read_excel(xlxs_Path, skiprows=[0, 2])
         
-        
-    
-      
-
-
-        #convert xlsx to csv and add a ID column
+        #add a ID column
         df.insert(0, 'ID', range(1, len(df) + 1))
-
-
-        csv_file_path = os.path.join(self.path, self.csv_path)
-        differentialPrParams=read_config_file('data/breast/differetial_p_arguments/breast_1.txt')
+        self.csv_file_path = os.path.join(self.path, self.csv_path)
+      
+        
+        dpArgumentsFolder=os.path.join(self.path,'differetial_p_arguments')
+        
+        dfargumentSheatFolder=os.path.join(dpArgumentsFolder,sheat_Name)
+        txtFilePath=os.path.join(dfargumentSheatFolder,self.data_name+'.txt')
+        differentialPrParams=read_config_file(txtFilePath)
 
         if(differentialPrParams != None):
             columnsList=differentialPrParams['columns']
@@ -56,22 +47,26 @@ class Anonymizer:
             minValueList=differentialPrParams['min_values']
             roundValuesList=differentialPrParams['round_values']
             apply_differential_privacy(df,columnsList,epsilonList,maxChangeList,minValueList,roundValuesList)
+        
 
-        df.to_csv(csv_file_path,index=False,sep=';')
+        df.to_csv(self.csv_file_path,index=False,sep=';')
         self.data_path = os.path.join(self.path, self.csv_path)
         
        
         # Generalization hierarchies path
+        self.hierarchies_path=os.path.join(self.path,'hierarchies')
+        
+        
         self.gen_path = os.path.join(
-            self.path,
-            'hierarchies')  # trailing /
+            self.hierarchies_path,
+            sheat_Name)  # trailing /
 
         # folder for all results
         res_folder = os.path.join(
             'results', 
-            args.dataset)
+            self.data_name)
         
-        resultFolder=os.path.join('results',args.dataset)
+        resultFolder=os.path.join('results',self.data_name)
         self.resultFolder=resultFolder
       
         # path for anonymized datasets
@@ -82,13 +77,15 @@ class Anonymizer:
 
     def anonymize(self):
         
-        data = pd.read_csv(self.data_path, delimiter=';')
+        data = pd.read_csv(self.csv_file_path, delimiter=';')
+
         # data_params = read_config_file_k_anonymity(data,'data/breast/k_anonymity_arguments/breast_1.txt')
-        hierarchiesToColumnsNames=extract_columns_from_hierarchies("data/breast/hierarchies")
+        hierarchiesToColumnsNames=extract_columns_from_hierarchies(self.gen_path)
         data_params=convert_columns_to_indexes(data,hierarchiesToColumnsNames)
 
         if(data_params==None):
-            destFolder=os.path.join(self.resultFolder,self.data_name+"_anonymized.csv")
+            destFolder=os.path.join(self.resultFolder,self.data_name+"-"+self.sheat_Name+"_anonymized.csv")
+            data = data.drop('ID', axis=1)
             data.to_csv(destFolder,index=False,sep=';')
         
         else:
@@ -110,7 +107,7 @@ class Anonymizer:
 
             raw_data, header = read_raw(
                 self.path, 
-                self.data_name, 
+                self.csv_name, 
                 QI_INDEX, IS_CAT)
 
             anon_params = {
@@ -131,8 +128,9 @@ class Anonymizer:
                     self.anon_folder, 
                     anon_data, 
                     header, 
-                    self.k, 
-                    self.data_name)
+                    self.k,
+                    self.data_name,
+                    self.sheat_Name)
 
                 # Normalized Certainty Penalty
             ncp = NCP(anon_data, QI_INDEX, ATT_TREES)
@@ -163,11 +161,24 @@ class Anonymizer:
             # raw_cavg_score, anon_cavg_score, raw_dm_score, anon_dm_score
 
 
-def main(args):
-    anonymizer = Anonymizer(args)
-    anonymizer.anonymize()
+def main(excel_path):
+    excel_Sheats={
+            "General info": "General_info",
+            "Timepoints": "Timepoints",
+            "Baseline":"Baseline",
+            "Histology - Mutations": 'Histology-Mutations',
+            "Treatment":"Treatment",
+            "Lab Results": "Lab_Results"
+        }
+    sheats_names=pd.ExcelFile(excel_path).sheet_names
+    excel_file_name = os.path.splitext(os.path.basename(excel_path))[0]
+
+    for sheat_name in sheats_names:
+        sheat=excel_Sheats[sheat_name]
+        anonymizer = Anonymizer(excel_path,sheat_Name=sheat,data_name=excel_file_name)
+        anonymizer.anonymize()
+        exit(1)
     
 
 if __name__ == '__main__':
-    args = parser.parse_args()
-    main(args)
+    main('data/breast/breast.xlsx')
