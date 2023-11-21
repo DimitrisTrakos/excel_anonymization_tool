@@ -226,13 +226,34 @@ class Anonymizer():
         os.remove(targetCsvFilePath)
 
         print(f"Conversion complete. XLSX file saved at {xlsx_file_path}. CSV file deleted.")
+    
+
+    def xlsx_to_excel(self,excel_sheets):
+        outputPath=os.path.join(self.anon_folder,self.data_name+'.xlsx')
+        excel_writer = pd.ExcelWriter(outputPath, engine='xlsxwriter')
+
+        for xlsx_file in os.listdir(self.anon_folder):
+            if('anonymized' in xlsx_file):
+                file_name = xlsx_file.split('-')[1]
+            
+                replacement_key = next((key for key, value in excel_sheets.items() if value == file_name), None)
+                if replacement_key:
+                    file_name = replacement_key
+                
+                if xlsx_file.endswith('.xlsx'):
+                    # Read the Excel file
+                    df = pd.read_excel(os.path.join(self.anon_folder, xlsx_file))
+                    df.to_excel(excel_writer, sheet_name=file_name, index=False)
+
+        # Save the Excel file
+        excel_writer._save()
                  
 def main(excel_path):
     excel_Sheats={
             "General info": "General_info",
             "Timepoints": "Timepoints",
             "Baseline":"Baseline",
-            "Histology - Mutations": 'Histology-Mutations',
+            "Histology - Mutations": 'Histology_Mutations',
             "Treatment":"Treatment",
             "Lab Results": "Lab_Results"
         }
@@ -246,6 +267,10 @@ def main(excel_path):
         anonymizer = Anonymizer(excel_path,sheat_Name=sheat,data_name=excel_file_name,sheat=sheat_name)
         anonymizer.anonymize()
         anonymizer.csvToXlsxResultsFiles()
+    
+    anonymizer.xlsx_to_excel(excel_sheets=excel_Sheats)
+
+
             
 if __name__ == '__main__':
     main('data/breast/breast.xlsx')
