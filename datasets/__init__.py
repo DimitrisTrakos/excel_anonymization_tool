@@ -120,3 +120,26 @@ def extract_columns_from_hierarchies(folder_path):
         return None
 
     return columnsNames
+
+def find_csv_file(folder_path, file_names):
+    """
+    Search for CSV files in a folder and return the names of files that match the given list of names.
+
+    Parameters:
+    - folder_path (str): The path to the folder containing CSV files.
+    - file_names (list): A list of strings representing the names to search for.
+
+    Returns:
+    - list: A list of CSV file names that were found in the folder.
+    """
+
+    # Get a list of files in the folder
+    files_in_folder = os.listdir(folder_path)
+
+    # Filter files that are CSV files and match the given names
+    matching_files = [file_name for file_name in files_in_folder if file_name.endswith('.csv') and file_name in file_names]
+
+    return matching_files
+
+
+

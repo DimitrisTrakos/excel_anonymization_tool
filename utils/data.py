@@ -70,7 +70,7 @@ def write_anon(path, anon_data, header, k, dataset,sheatName, delimiter=';'):
         anon_data = [[[item for item in inner_list[1:]] for inner_list in anon_data]]    
     header=header[1:]
     for i, data in enumerate(anon_data):
-        with open(os.path.join(path, dataset +"-"+sheatName+ "_anonymized_" + str(k) + ".csv"), mode='w', newline='') as anon_file:
+        with open(os.path.join(path, dataset +"-"+sheatName+ "-anonymized_" + str(k) + ".csv"), mode='w', newline='') as anon_file:
             anon_writer = csv.writer(anon_file, delimiter=delimiter)
             anon_writer.writerow(header)
             anon_writer.writerows(data)
