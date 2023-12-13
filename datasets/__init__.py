@@ -1,53 +1,8 @@
 
-from utils.types import Dataset
 import pandas as pd
 import os
 
-def get_dataset_params(name):
-    if name == Dataset.ADULT:
-        QI_INDEX = [1, 2, 3, 4, 5, 6, 7, 8]
-        target_var = 'salary-class'
-        IS_CAT = [True, False, True, True, True, True, True, True]
-        max_numeric = {"age": 79}
-    if name == Dataset.BREAST:
-        QI_INDEX = [4]
-        # target_var = 'Gender'
-        # max_numeric = {"age": 79}
-    elif name == Dataset.CMC:
-        QI_INDEX = [1, 2, 4]
-        target_var = 'method'
-        IS_CAT = [False, True, False]
-        max_numeric = {"age": 32.5, "children": 8}
-    elif name == Dataset.MGM:
-        QI_INDEX = [1, 2, 3, 4, 5]
-        target_var = 'severity'
-        IS_CAT = [True, False, True, True, True]
-        max_numeric = {"age": 50.5}
-    elif name == Dataset.CAHOUSING:
-        QI_INDEX = [1, 2, 3, 8, 9]
-        target_var = 'ocean_proximity'
-        IS_CAT = [False, False, False, False, False]
-        max_numeric = {"latitude": 119.33, "longitude": 37.245, "housing_median_age": 32.5,
-                    "median_house_value": 257500, "median_income": 5.2035}
-    elif name == Dataset.INFORMS:
-        QI_INDEX = [3, 4, 6, 13, 16]
-        target_var = "poverty"
-        IS_CAT = [True, True, True, True, False]
-        max_numeric = {"DOBMM": None, "DOBYY": None, "RACEX":None, "EDUCYEAR": None, "income": None}
-    elif name == Dataset.ITALIA:
-        QI_INDEX = [1, 2, 3]
-        target_var = "disease"
-        IS_CAT = [False, True, False]
-        max_numeric = {"age": 50, "city_birth": None, "zip_code":50000}
-    else:
-        print(f"Not support {name} dataset")
-        raise ValueError
-    return {
-        'qi_index': QI_INDEX,
-        # 'is_category': IS_CAT,
-        # 'target_var': target_var,
-        # 'max_numeric': max_numeric
-    }
+
     
 def read_config_file(file_path):
     """
@@ -141,5 +96,44 @@ def find_csv_file(folder_path, file_names):
 
     return matching_files
 
+def get_cancer_type(value):
+    cancer_types = ["breast", "colorectal", "lung", "prostate"]
 
+    # Convert the input value to lowercase for case-insensitive comparison
+    lowercase_value = value.lower()
+    
+    # Check if any cancer type is present in the lowercase version of the value
+    for cancer_type in cancer_types:
+        if cancer_type.lower() in lowercase_value:
+            return cancer_type
+    
+    # If no match is found, return None or any other value you prefer
+    return None
+    
+def skipRowsArray(value):
+    length=len(value)
+    result=list(range(length+1))
+    
+    result.append(length+2)
+    
+    return result
+  
 
+def findPatienNumber(header_row,df):
+    flag=False
+    columnDiscription=''
+    unwantedRows=''
+    if "Patient Number*" in  header_row:
+            columnDiscription=df.iloc[0].values
+    else:
+        if "Patient Number*" in df.iloc[:1].values:
+            flag=True
+            columnDiscription=df.iloc[1].values
+        else:
+            for i in range(10):
+                row=df.iloc[:i].values           
+                if "Patient Number*" in row:
+                    unwantedRows=df.iloc[:i-1].values
+                    columnDiscription=df.iloc[i].values
+                    break
+    return flag,columnDiscription,unwantedRows
