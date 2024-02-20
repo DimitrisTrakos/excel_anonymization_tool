@@ -22,6 +22,7 @@ def read_config_file(file_path):
 
     with open(file_path, 'r') as file:
         # Skip the header line
+        print(file_path)
         for line in file:
             values = line.strip().split(',')
             columns.append(values[0])
@@ -123,16 +124,18 @@ def findPatienNumber(header_row,df):
     flag=False
     columnDiscription=''
     unwantedRows=''
-    if "Patient Number*" in  header_row:
+    
+ 
+    if "Patient Number*" in  header_row or "Patient Number" in  header_row:
             columnDiscription=df.iloc[0].values
     else:
-        if "Patient Number*" in df.iloc[:1].values:
+        if "Patient Number*" in df.iloc[:1].values or "Patient Number" in  df.iloc[:1].values:
             flag=True
             columnDiscription=df.iloc[1].values
         else:
             for i in range(10):
-                row=df.iloc[:i].values           
-                if "Patient Number*" in row:
+                row=df.iloc[:i].values
+                if "Patient Number*" in row or "Patient Number" in  row:
                     unwantedRows=df.iloc[:i-1].values
                     columnDiscription=df.iloc[i].values
                     break
