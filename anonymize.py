@@ -14,6 +14,7 @@ class Anonymizer():
         self.fileName=self.excelName+"-"+self.sheat_Name+"-anonymized.xlsx"
         self.dataProvider=data_provider
         
+        
         # Dataset path
         xlxs_Path=excel_path
         # Data path
@@ -23,6 +24,9 @@ class Anonymizer():
         self.gen_path = os.path.join(
             self.hierarchies_path,
             sheat_Name)  # trailing /
+        
+        print(xlxs_Path)
+        exit(1)
        
         
         #keep the header and the second row
@@ -88,10 +92,12 @@ class Anonymizer():
             ethnicityGrouping(df,self.columnDiscription)
         
         if "Patient Number*" in df.columns:
-            df['Patient Number*'] = df['Patient Number*'].apply(idsMappingPatienNumber)
+            df['Patient Number*'] = df['Patient Number*'].astype(str)
+            df['Patient Number*'] = df['Patient Number*'].apply(idsMappingPatienNumber,data_name=self.data_name)
            
         
         if "Patient Number" in df.columns:
+            df['Patient Number'] = df['Patient Number'].astype(str)
             df['Patient Number'] = df['Patient Number'].apply(idsMappingPatienNumber)
         
         if (sheat=='General info') and "Provider*" in df.columns:
@@ -214,23 +220,18 @@ def exec_anonymization(excel_path):
    
     excel_file_name = os.path.splitext(os.path.basename(excel_path))[0]
 
-    kSheat=[]
     for sheat_name in sheats_names:
         sheat=excel_Sheats[sheat_name]
         anonymizer = Anonymizer(excel_path=excel_path,sheat_Name=sheat,data_name=excel_file_name,sheat=sheat_name,data_provider=dataProvider)
-        # k=anonymizer.get_K()
-        # kSheat.append(k)
-    
-    # print(f"Final k for  {excel_file_name} is {min(kSheat)}")
-    
+          
     anonymizer.xlsx_to_excel(excel_sheets=excel_Sheats)
     anonymizer.deleteFiles(names_to_delete=namesToDelete)
     
-def main():
-    parser = argparse.ArgumentParser(description='Description of your script.')
-    parser.add_argument('arg1', type=str, help='Folder Path...')
-    args = parser.parse_args()
-    folder_path = args.arg1
+def anonymize_excel(folder_path):
+    # parser = argparse.ArgumentParser(description='Description of your script.')
+    # parser.add_argument('arg1', type=str, help='Folder Path...')
+    # args = parser.parse_args()
+    folder_path = folder_path
     cancer_types = ["breast", "colorectal", "lung", "prostate"]
     excel_suffixes = ["_cancer.xls", "_cancer_training.xls", "_cancer_observational.xls", "_cancer_feasibility.xls","_cancer.xlsx", "_cancer_training.xlsx", "_cancer_observational.xlsx", "_cancer_feasibility.xlsx"]
     possible_file_names = [f"{cancer_type}{suffix}".lower() for cancer_type in cancer_types for suffix in excel_suffixes]    
@@ -245,6 +246,9 @@ def main():
 
             
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='Description of your script.')
+    parser.add_argument('arg1', type=str, help='Folder Path...')
+    args = parser.parse_args()
+    anonymize_excel(args.arg1)
    
             

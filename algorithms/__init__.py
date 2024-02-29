@@ -74,7 +74,8 @@ def apply_differential_privacy(data, columns, epsilons, max_changes, min_values,
                         data.at[i, column] = noisy_value
                         
 
-def idsMappingPatienNumber(patient_number):
+   
+def idsMappingPatienNumber(patient_number,data_name):
     ids_mapping={
     "001": "953",
     "002": "572",
@@ -85,7 +86,16 @@ def idsMappingPatienNumber(patient_number):
     "007": "529",
     "008": "393",
     "009": "338",
-}            
+    }    
+    json_file = "id_mapping_"+data_name+".json"
+    
+    with open(json_file, 'r') as f:
+        json_data = json.load(f)
+    
+    print(json_data)
+    exit(1)
+    if patient_number == np.nan or patient_number=='nan':
+        return patient_number     
     
     prefix, suffix = patient_number.split('-')
     mapped_prefix = ids_mapping.get(prefix, prefix) # Default to original if not found in mapping
