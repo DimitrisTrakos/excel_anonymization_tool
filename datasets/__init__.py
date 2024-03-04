@@ -1,8 +1,6 @@
 
 import pandas as pd
 import os
-
-
     
 def read_config_file(file_path):
     """
@@ -22,7 +20,6 @@ def read_config_file(file_path):
 
     with open(file_path, 'r') as file:
         # Skip the header line
-        print(file_path)
         for line in file:
             values = line.strip().split(',')
             columns.append(values[0])

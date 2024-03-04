@@ -5,6 +5,8 @@ from scipy.stats import laplace
 import re
 from pycanon import anonymity
 import math
+import os
+import json
 
 def fixDeleteFreeText(value):
     # Check if the value is a string and has at least two characters
@@ -75,7 +77,7 @@ def apply_differential_privacy(data, columns, epsilons, max_changes, min_values,
                         
 
    
-def idsMappingPatienNumber(patient_number,data_name):
+def idsMappingPatienNumber(patient_number,data_name,folder_path):
     ids_mapping={
     "001": "953",
     "002": "572",
@@ -86,18 +88,18 @@ def idsMappingPatienNumber(patient_number,data_name):
     "007": "529",
     "008": "393",
     "009": "338",
-    }    
-    json_file = "id_mapping_"+data_name+".json"
-    
+    }
+
+    json_file = os.path.join(folder_path,"id_mapping_"+data_name+".json")
     with open(json_file, 'r') as f:
         json_data = json.load(f)
-    
-    print(json_data)
-    exit(1)
-    if patient_number == np.nan or patient_number=='nan':
+        
+    if patient_number == np.nan or patient_number=='nan' or patient_number=="" or (patient_number is None) or patient_number==" " :
         return patient_number     
     
     prefix, suffix = patient_number.split('-')
+    if suffix in json_data:
+        suffix=json_data[suffix]
     mapped_prefix = ids_mapping.get(prefix, prefix) # Default to original if not found in mapping
     return f'{mapped_prefix}-{suffix}'
 
@@ -292,100 +294,6 @@ def remove_dot_and_digit(input_string):
         return substrings
     return re.sub(r'\.\d', '', substrings)
    
-    
-
-def calculateK(df,data_name,sheat,excelName):
-    if(sheat=='General info'):
-        if data_name==('breast' or 'lung' or 'prostate'):
-            QI = ["Gender","Case*"]
-            SA=['Patient Number*']
-            df2 = df.dropna(subset=QI)
-            
-        if data_name=='lung':
-            QI = ["Gender","Case*"]
-            SA=['Patient Number*']
-            df2 = df.dropna(subset=QI)
-        
-        k=anonymity.k_anonymity(df2,QI)
-    
-    if(sheat=='Baseline'):
-        if  data_name=='breast':
-            QI = ["Mammography","Ultrasound","MRI","PET/CT","Histopathology Image","Xray","Left Breast BIRADS classification","Right  Breast BIRADS classification"]
-            SA=['Patient Number*']
-            df2 = df.dropna(subset=QI)
-            
-        
-        if  data_name=='prostate':
-            QI = ["CT scan","PET","MRI","Bone Scintigraphy Scan","Histopathology Image","Xray","Maximum PIRADS"]
-            SA=['Patient Number*']
-            df2 = df.dropna(subset=QI)
-        
-        if  data_name=='lung':
-            QI = ["CT","MRI","PET-CT","Histopathology Image","Xray","Stage"]
-            SA=['Patient Number*']
-            df2 = df.dropna(subset=QI)
-        
-        if  data_name=='colorectal':
-            QI = ["CT","MRI","PET-CT","Histopathology Image","Xray","TNM Staging"]
-            SA=['Patient Number*']
-            df2 = df.dropna(subset=QI)
-        
-        k=anonymity.k_anonymity(df2,QI)
-    
-    if(sheat=='Timepoints'):
-        if data_name=='breast':
-            QI = ["Label*","Mammography","Ultrasound","CT","MRI","PET/CT","Histopathology Image","Xray","Left Breast BIRADS classification","Right  Breast BIRADS classification"]
-            SA=['Patient Number*']
-            df2 = df.dropna(subset=QI)
-        
-        if  data_name=='prostate':
-            QI = ["Label","CT scan","PET","MRI","Bone Scintigraphy Scan","Histopathology Image","Xray","Maximum PIRADS"]
-            SA=['Patient Number*']
-            df2 = df.dropna(subset=QI)
-        
-        if  data_name=='lung':
-            QI = ["Label*","CT","PET","MRI","PET-CT","Histopathology Image","Xray","Stage"]
-            SA=['Patient Number*']
-            df2 = df.dropna(subset=QI)
-        
-        if  data_name=='lung':
-            QI = ["Label*","CT","PET","MRI","PET-CT","Histopathology Image","Xray","Stage"]
-            SA=['Patient Number*']
-            df2 = df.dropna(subset=QI)
-        
-        k=anonymity.k_anonymity(df2,QI)
-
-    
-    if(sheat=='Treatment'):
-        if  data_name=='breast':
-            QI = ["Treatment label*","Treatment","Surgery",'Chemotherapy (CTX)','ChemoImmunotherapy (CIT)','Chemoradiotherapy (CRT)','Radiation therapy','Boost','Targeted therapy','Immune therapy','ADJUVANT TREATMENT','NEOADJUVANT TREATMENT']
-            SA=['Patient Number*']
-            df2 = df.dropna(subset=QI)
-
-        
-        if  data_name=='prostate':
-            QI = ["Treatment label","Treatment","lymph node dissection"]
-            SA=['Patient Number*']
-            df2 = df.dropna(subset=QI)
-
-        
-        if  data_name=='lung':
-            QI = ["Treatment label*","Chemotherapy (CT)","Chemoradiotherapy (CRT)","Chemoimmunoherapy (CIT)","Targeted-therapy (TT)","Immunotherapy (IT)","Radiation therapy (RT)","Post-treatment surgery"]
-            SA=['Patient Number*']
-            df2 = df.dropna(subset=QI)
-
-        
-        if  data_name=='colorectal':
-            QI = ["Treatment label","Surgery","Chemotherapy (CT)",'Chemoradiotherapy (CRT)','Chemoimmunotherapy (CIT)','Radiation therapy (RT)','Radiation therapy','Boost','Post-treatment surgery']
-            SA=['Patient Number*']
-            df2 = df.dropna(subset=QI)
-    
-    if(QI):    
-        k=anonymity.k_anonymity(df2,QI)
-        print(f"Calculating k for  {sheat} of {excelName}..")
-        print(f"K is: {k}")
-        return k
-    return 10000
 
 def calculateJaccardSimilarity(dfOriginal,dfAnonymized,data_name,sheat):
     QI=[]
@@ -469,6 +377,6 @@ def calculate_generalization_level(original_df, anonymized_df):
                 "Percentage of New Values in Anonymized": percentage_new_anonymized
             }
 
-            print("Metrics fot column {} is: {}".format(column_name,metrics))
+            # print("Metrics fot column {} is: {}".format(column_name,metrics))
         
        

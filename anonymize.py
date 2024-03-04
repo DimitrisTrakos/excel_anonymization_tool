@@ -7,27 +7,20 @@ import argparse
 from algorithms import apply_differential_privacy,ethnicityGrouping,medicationLevelUp,remove_dot_and_digit,calculateJaccardSimilarity,calculate_generalization_level,idsMappingPatienNumber,idsMappingProvider
 from datasets import read_config_file,get_cancer_type,skipRowsArray,findPatienNumber
 class Anonymizer():
-    def __init__(self,excel_path=None,sheat_Name=None,data_name=None,sheat=None,data_provider=None):
+    def __init__(self,excel_path=None,sheat_Name=None,data_name=None,sheat=None,folder_path=None,data_provider=None):
         self.sheat_Name=sheat_Name
         self.excelName=data_name
         self.data_name = get_cancer_type(data_name)
         self.fileName=self.excelName+"-"+self.sheat_Name+"-anonymized.xlsx"
         self.dataProvider=data_provider
         
+       
+        
         
         # Dataset path
         xlxs_Path=excel_path
         # Data path
         self.path = os.path.join('data', self.data_name)  # trailing /
-        # Generalization hierarchies path
-        self.hierarchies_path=os.path.join(self.path,'hierarchies')
-        self.gen_path = os.path.join(
-            self.hierarchies_path,
-            sheat_Name)  # trailing /
-        
-        print(xlxs_Path)
-        exit(1)
-       
         
         #keep the header and the second row
         df=pd.read_excel(xlxs_Path,sheet_name=sheat)
@@ -36,7 +29,6 @@ class Anonymizer():
         
         column_name_to_drop = df.columns[column_indices_with_value]
         df.drop(column_name_to_drop, axis=1,inplace=True)
-      
             
         self.header_row=df.columns.tolist()
        
@@ -93,12 +85,12 @@ class Anonymizer():
         
         if "Patient Number*" in df.columns:
             df['Patient Number*'] = df['Patient Number*'].astype(str)
-            df['Patient Number*'] = df['Patient Number*'].apply(idsMappingPatienNumber,data_name=self.data_name)
+            df['Patient Number*'] = df['Patient Number*'].apply(idsMappingPatienNumber,data_name=self.data_name,folder_path=folder_path)
            
         
         if "Patient Number" in df.columns:
             df['Patient Number'] = df['Patient Number'].astype(str)
-            df['Patient Number'] = df['Patient Number'].apply(idsMappingPatienNumber)
+            df['Patient Number'] = df['Patient Number'].apply(idsMappingPatienNumber,data_name=self.data_name,folder_path=folder_path)
         
         if (sheat=='General info') and "Provider*" in df.columns:
             df['Provider*'] = df['Provider*'].apply(idsMappingProvider)
@@ -114,11 +106,9 @@ class Anonymizer():
         dfAnonymized=df.copy()
         JaccardSimilarity=calculateJaccardSimilarity(dfOriginal,dfAnonymized,self.data_name,sheat)
         if JaccardSimilarity:
-              print(f"Jaccard similarity coefficient for {self.sheat_Name} :")
-              print(JaccardSimilarity)
-        # k=calculateK(df,self.data_name,sheat,self.excelName)
-        # print(k)
-        # self.k=k
+            pass
+            #   print(f"Jaccard similarity coefficient for {self.sheat_Name} :")
+            #   print(JaccardSimilarity)
         
         calculate_generalization_level(dfOriginal,dfAnonymized)
              
@@ -154,7 +144,8 @@ class Anonymizer():
         
       
         # path for anonymized datasets
-        self.anon_folder = res_folder  # trailing /
+        self.anon_folder = res_folder
+        self.fold=folder_path 
         
         # name for result file
         self.resultFilename=os.path.join(self.anon_folder,self.fileName)
@@ -163,13 +154,10 @@ class Anonymizer():
         
         
         df.to_excel(self.resultFilename, sheet_name=sheat, index=False)
-        print(f"Conversion complete. XLSX file saved at {self.resultFilename}.")
-    
-    # def get_K(self):
-    #     return self.k     
+        # print(f"Conversion complete. XLSX file saved at {self.resultFilename}.") 
     
     def xlsx_to_excel(self,excel_sheets):
-        outputPath=os.path.join(self.anon_folder,self.excelName+'_anonym'+'.xlsx')
+        outputPath=os.path.join(self.fold,self.excelName+"_anonymized"+'.xls')
         excel_writer = pd.ExcelWriter(outputPath, engine='xlsxwriter')
 
         for xlsx_file in os.listdir(self.anon_folder):
@@ -201,11 +189,12 @@ class Anonymizer():
 
                 # Delete the file
                 os.remove(file_path)
-                print(f"Deleted: {file_path}")
+                # print(f"Deleted: {file_path}")
     
                  
-def exec_anonymization(excel_path):
-    dataProvider=excel_path.split('/')[-2]
+def exec_anonymization(excel_path,folder_path):
+    dataProvider=excel_path.split('/')[-3]
+
     excel_Sheats={
             "General info": "General_info",
             "Timepoints": "Timepoints",
@@ -222,27 +211,21 @@ def exec_anonymization(excel_path):
 
     for sheat_name in sheats_names:
         sheat=excel_Sheats[sheat_name]
-        anonymizer = Anonymizer(excel_path=excel_path,sheat_Name=sheat,data_name=excel_file_name,sheat=sheat_name,data_provider=dataProvider)
+        anonymizer = Anonymizer(excel_path=excel_path,sheat_Name=sheat,data_name=excel_file_name,sheat=sheat_name,folder_path=folder_path,data_provider=dataProvider)
           
     anonymizer.xlsx_to_excel(excel_sheets=excel_Sheats)
     anonymizer.deleteFiles(names_to_delete=namesToDelete)
     
 def anonymize_excel(folder_path):
-    # parser = argparse.ArgumentParser(description='Description of your script.')
-    # parser.add_argument('arg1', type=str, help='Folder Path...')
-    # args = parser.parse_args()
-    folder_path = folder_path
+    folder_path=os.path.join(folder_path,"data")
     cancer_types = ["breast", "colorectal", "lung", "prostate"]
     excel_suffixes = ["_cancer.xls", "_cancer_training.xls", "_cancer_observational.xls", "_cancer_feasibility.xls","_cancer.xlsx", "_cancer_training.xlsx", "_cancer_observational.xlsx", "_cancer_feasibility.xlsx"]
     possible_file_names = [f"{cancer_type}{suffix}".lower() for cancer_type in cancer_types for suffix in excel_suffixes]    
     for filename in os.listdir(folder_path):
         if filename.lower() in possible_file_names:
             file_path = os.path.join(folder_path, filename)
-            exec_anonymization(file_path)
+            exec_anonymization(file_path,folder_path)
     
-
-    
-   
 
             
 if __name__ == '__main__':
