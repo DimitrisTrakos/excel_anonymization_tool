@@ -1,2 +1,5 @@
 results/
 .vscode
+__pycache
+algorithms/__pycache__
+datasets/__pycache__
