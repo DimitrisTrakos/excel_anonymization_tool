@@ -106,9 +106,8 @@ class Anonymizer():
         dfAnonymized=df.copy()
         JaccardSimilarity=calculateJaccardSimilarity(dfOriginal,dfAnonymized,self.data_name,sheat)
         if JaccardSimilarity:
-            pass
-            #   print(f"Jaccard similarity coefficient for {self.sheat_Name} :")
-            #   print(JaccardSimilarity)
+            print(f"Jaccard similarity coefficient for {self.sheat_Name} :")
+            print(JaccardSimilarity)
         
         calculate_generalization_level(dfOriginal,dfAnonymized)
              
@@ -154,7 +153,7 @@ class Anonymizer():
         
         
         df.to_excel(self.resultFilename, sheet_name=sheat, index=False)
-        # print(f"Conversion complete. XLSX file saved at {self.resultFilename}.") 
+        print(f"Conversion complete. XLSX file saved at {self.resultFilename}.") 
     
     def xlsx_to_excel(self,excel_sheets):
         outputPath=os.path.join(self.fold,self.excelName+"_anonymized"+'.xls')
@@ -189,7 +188,7 @@ class Anonymizer():
 
                 # Delete the file
                 os.remove(file_path)
-                # print(f"Deleted: {file_path}")
+                print(f"Deleted: {file_path}")
     
                  
 def exec_anonymization(excel_path,folder_path):

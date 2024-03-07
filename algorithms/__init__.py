@@ -377,6 +377,6 @@ def calculate_generalization_level(original_df, anonymized_df):
                 "Percentage of New Values in Anonymized": percentage_new_anonymized
             }
 
-            # print("Metrics fot column {} is: {}".format(column_name,metrics))
+            print("Metrics fot column {} is: {}".format(column_name,metrics))
         
        
